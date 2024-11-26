@@ -1,39 +1,29 @@
-// create web server and listen for incoming requests
-const http = require('http');
-const fs = require('fs');
+// create web server
+const express = require('express');
+const app = express();
 const path = require('path');
-const url = require('url');
+const fs = require('fs');
+const bodyParser = require('body-parser');
 
-const comments = [];
+app.use(express.static(path.join(__dirname, 'public')));
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
 
-const server = http.createServer((req, res) => {
-    const parsedUrl = url.parse(req.url, true);
-    const pathname = parsedUrl.pathname;
-    if (req.method === 'POST' && pathname === '/comment') {
-        let body = '';
-        req.on('data', (chunk) => {
-            body += chunk.toString();
-        });
-        req.on('end', () => {
-            const comment = JSON.parse(body);
-            comments.push(comment);
-            res.end('Comment added');
-        });
-    } else if (req.method === 'GET' && pathname === '/comments') {
-        res.end(JSON.stringify(comments));
-    } else {
-        const filePath = path.join(__dirname, pathname);
-        fs.readFile(filePath, 'utf8', (err, data) => {
-            if (err) {
-                res.statusCode = 404;
-                res.end('Not found');
-            } else {
-                res.end(data);
-            }
-        });
-    }
+// define the comments array
+let comments = [];
+
+// create a route to get comments
+app.get('/comments', (req, res) => {
+    res.json(comments);
 });
 
-server.listen(3000, () => {
-    console.log('Server is running on http://localhost:3000');
+// create a route to post comments
+app.post('/comments', (req, res) => {
+    const comment = req.body;
+    comments.push(comment);
+    res.json(comment);
+});
+
+app.listen(3000, () => {
+    console.log('Server is running on port 3000');
 });
